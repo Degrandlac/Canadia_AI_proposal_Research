@@ -470,7 +470,7 @@ class DetectionModel(BaseModel):
         Returns:
             (list[torch.Tensor]): Clipped detection tensors.
         """
-        nl = self.model[-1].nl  # number of detection layers (P3-P5)
+        nl = self.model[-1].nl  # number of detection layers (P1-P4)
         g = sum(4**x for x in range(nl))  # grid points
         e = 1  # exclude layer count
         i = (y[0].shape[-1] // g) * sum(4**x for x in range(e))  # indices

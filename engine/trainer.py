@@ -280,6 +280,7 @@ class BaseTrainer:
             else []
         )
         always_freeze_names = []  # always freeze these layers
+        print(always_freeze_names)
         freeze_layer_names = [f"model.{x}." for x in freeze_list] + always_freeze_names
         self.freeze_layer_names = freeze_layer_names
         for k, v in self.model.named_parameters():
