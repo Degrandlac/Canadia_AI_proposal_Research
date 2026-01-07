@@ -281,6 +281,7 @@ class BaseTrainer:
         )
         always_freeze_names = []  # always freeze these layers
         print(always_freeze_names)
+        print('iam here')
         freeze_layer_names = [f"model.{x}." for x in freeze_list] + always_freeze_names
         self.freeze_layer_names = freeze_layer_names
         for k, v in self.model.named_parameters():
@@ -373,6 +374,7 @@ class BaseTrainer:
         self.run_callbacks("on_train_start")
         LOGGER.info(
             f"Image sizes {self.args.imgsz} train, {self.args.imgsz} val\n"
+            f"doing this here"
             f"Using {self.train_loader.num_workers * (self.world_size or 1)} dataloader workers\n"
             f"Logging results to {colorstr('bold', self.save_dir)}\n"
             f"Starting training for " + (f"{self.args.time} hours..." if self.args.time else f"{self.epochs} epochs...")

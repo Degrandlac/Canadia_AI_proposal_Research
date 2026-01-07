@@ -196,12 +196,24 @@ class v8DetectionLoss:
 
     def __init__(self, model, tal_topk: int = 10):  # model must be de-paralleled
         """Initialize v8DetectionLoss with model parameters and task-aligned assignment settings."""
+
+        import sys
+    
+        # ULTRA MEGA VISIBLE PRINT - IMPOSSIBLE TO MISS
+        print("\n" + "🔥" * 50, flush=True)
+        print("🔥" + " " * 48 + "🔥", flush=True)
+        print("🔥  VARIFOCAL LOSS INITIALIZATION - YOU FOUND IT!  🔥", flush=True)
+        print("🔥" + " " * 48 + "🔥", flush=True)
+        print("🔥" * 50, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
         device = next(model.parameters()).device  # get model device
         h = model.args  # hyperparameters
 
         m = model.model[-1]  # Detect() module
-        self.bce = nn.BCEWithLogitsLoss(reduction="none")
+        # self.bce = nn.BCEWithLogitsLoss(reduction="none")
         self.varifocal_loss = VarifocalLoss(gamma=2.5, alpha=0.85)
+        print(f"✅ Varifocal Loss: gamma={2.5}, alpha={0.85}")
         self.hyp = h
         self.stride = m.stride  # model strides
         self.nc = m.nc  # number of classes
