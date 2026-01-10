@@ -217,9 +217,22 @@ class Loss:
         target_scores_sum = max(target_scores.sum(), 1)
 
 
-        target_labels = target_labels.unsqueeze(-1).expand(-1, -1, self.nc) # self.nc: class num
-        one_hot = torch.zeros(target_labels.size(), device=self.device)
-        one_hot.scatter_(-1, target_labels, 1)
+        # target_labels = target_labels.unsqueeze(-1).expand(-1, -1, self.nc) # self.nc: class num
+        # one_hot = torch.zeros(target_labels.size(), device=self.device)
+        # one_hot.scatter_(-1, target_labels, 1)
+
+
+
+                # ✅ SIMPLE FIX:
+        target_labels_long = target_labels.long()  # ← ADD .long() HERE!
+
+        one_hot = torch.zeros(pred_scores.shape, dtype=pred_scores.dtype, device=self.device)
+        target_labels_long = target_labels_long.unsqueeze(-1).clamp(0, self.nc - 1)
+
+        one_hot.scatter_(-1, target_labels_long, 1.0)
+
+        # cls loss
+        # loss[1] = self.varifocal_loss(pred_scores, target_scores, one_hot) / target_scores_sum
 
         # cls loss
         loss[1] = self.varifocal_loss(pred_scores, target_scores, one_hot) / target_scores_sum  # VFL way

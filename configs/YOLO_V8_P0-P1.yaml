@@ -1,6 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 # Parameters
-nc: 4 # number of classes
+nc: 5 # number of classes
 scales: # model compound scaling constants
   # [depth, width, max_channels]
   m: [0.67, 0.75, 768] # YOLOv8m
