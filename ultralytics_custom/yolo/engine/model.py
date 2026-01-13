@@ -415,11 +415,11 @@ class YOLO:
         except ImportError:
             raise ModuleNotFoundError("Install Ray Tune: `pip install 'ray[tune]'`")
 
-        try:
-            import wandb
-            from wandb import __version__  # noqa
-        except ImportError:
-            wandb = False
+        # try:
+        #     import wandb
+        #     from wandb import __version__  # noqa
+        # except ImportError:
+        #     wandb = False
 
         def _tune(config):
             """
@@ -453,7 +453,7 @@ class YOLO:
                                        reduction_factor=3)
 
         # Define the callbacks for the hyperparameter search
-        tuner_callbacks = [WandbLoggerCallback(project='yolov8_tune')] if wandb else []
+        tuner_callbacks = [] 
 
         import os
 
