@@ -455,11 +455,13 @@ class YOLO:
         # Define the callbacks for the hyperparameter search
         tuner_callbacks = [WandbLoggerCallback(project='yolov8_tune')] if wandb else []
 
+        import os
+
         # Create the Ray Tune hyperparameter search tuner
         tuner = tune.Tuner(trainable_with_resources,
                            param_space=space,
                            tune_config=tune.TuneConfig(scheduler=asha_scheduler, num_samples=max_samples),
-                           run_config=RunConfig(callbacks=tuner_callbacks, storage_path='./runs'))
+                           run_config=RunConfig(callbacks=tuner_callbacks, storage_path=os.path.abspath("./runs")))
 
         # Run the hyperparameter search
         tuner.fit()
