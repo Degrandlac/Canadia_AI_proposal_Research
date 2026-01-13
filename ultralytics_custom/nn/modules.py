@@ -227,6 +227,27 @@ class C2f(nn.Module):
         y = list(self.cv1(x).split((self.c, self.c), 1))
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
+    
+
+
+
+class C2fGhost(nn.Module):
+    """CSP Bottleneck with 2 convolutions using GhostBottleneck."""
+
+    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
+        """Initialize C2f with Ghost Bottlenecks instead of standard Bottlenecks."""
+        super().__init__()
+        self.c = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, 2 * self.c, 1, 1)
+        self.cv2 = Conv((2 + n) * self.c, c2, 1)
+        # Use GhostBottleneck instead of Bottleneck
+        self.m = nn.ModuleList(GhostBottleneck(self.c, self.c) for _ in range(n))
+
+    def forward(self, x):
+        """Forward pass using Ghost Bottlenecks."""
+        y = list(self.cv1(x).chunk(2, 1))
+        y.extend(m(y[-1]) for m in self.m)
+        return self.cv2(torch.cat(y, 1))
 
 
 class ChannelAttention(nn.Module):
@@ -303,6 +324,10 @@ class C3TR(C3):
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = TransformerBlock(c_, c_, 4, n)
+
+
+
+
 
 
 class C3Ghost(C3):

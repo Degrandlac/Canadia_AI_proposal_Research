@@ -1,0 +1,46 @@
+# YOLO-Tryppa for Malaria Detection
+nc: 5 # number of classes
+scales:
+  m: [0.67, 0.75, 768]
+
+# Backbone: First 2 Conv standard, rest Ghost
+backbone:
+  # Standard Conv (as per paper - first 2 layers)
+  - [-1, 1, Conv, [64, 3, 2]]              # 0-P1/2 (320×320)
+  - [-1, 1, Conv, [128, 3, 2]]             # 1-P2/4 (160×160) ← Save for P2 head!
+  
+  # Ghost Convolutions start here
+  - [-1, 1, C2fGhost, [128, True]]         # 2-P2 features
+  
+  - [-1, 1, GhostConv, [256, 3, 2]]        # 3-P3/8 (80×80)
+  - [-1, 3, C2fGhost, [256, True]]         # 4-P3 features
+  
+  - [-1, 1, GhostConv, [512, 3, 2]]        # 5-P4/16 (40×40)
+  - [-1, 3, C2fGhost, [512, True]]         # 6-P4 features
+  
+  - [-1, 1, SPPF, [512, 5]]                # 7
+
+# Head: P2, P3, P4 detection (NO P5)
+head:
+  # Top-down pathway
+  - [-1, 1, GhostConv, [256, 1, 1]]                  # 8
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]       # 9: P4→P3
+  - [[-1, 4], 1, Concat, [1]]                        # 10: concat P3
+  - [-1, 3, C2fGhost, [256]]                         # 11: fuse P3
+  
+  - [-1, 1, GhostConv, [128, 1, 1]]                  # 12
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]       # 13: P3→P2
+  - [[-1, 2], 1, Concat, [1]]                        # 14: concat P2 (from backbone layer 2!)
+  - [-1, 3, C2fGhost, [128]]                         # 15: fuse P2 ← P2 detection features!
+  
+  # Bottom-up pathway
+  - [-1, 1, GhostConv, [128, 3, 2]]                  # 16: P2→P3
+  - [[-1, 11], 1, Concat, [1]]                       # 17: concat P3
+  - [-1, 3, C2fGhost, [256]]                         # 18: refined P3
+  
+  - [-1, 1, GhostConv, [256, 3, 2]]                  # 19: P3→P4
+  - [[-1, 7], 1, Concat, [1]]                        # 20: concat SPPF
+  - [-1, 3, C2fGhost, [512]]                         # 21: refined P4
+  
+  # Detection heads: P2, P3, P4 only (NO P1, NO P5!)
+  - [[15, 18, 21], 1, Detect, [nc]]                  # 22: Detect(P2, P3, P4)
