@@ -415,11 +415,11 @@ class YOLO:
         except ImportError:
             raise ModuleNotFoundError("Install Ray Tune: `pip install 'ray[tune]'`")
 
-        # try:
-        #     import wandb
-        #     from wandb import __version__  # noqa
-        # except ImportError:
-        #     wandb = False
+        try:
+            import wandb
+            from wandb import __version__  # noqa
+        except ImportError:
+            wandb = False
 
         def _tune(config):
             """
@@ -442,8 +442,7 @@ class YOLO:
         space['data'] = data
 
         # Define the trainable function with allocated resources
-        # trainable_with_resources = tune.with_resources(_tune, {'cpu': 8, 'gpu': gpu_per_trial if gpu_per_trial else 0})
-        trainable_with_resources = tune.with_resources(_tune,{'cpu': '2', 'gpu': gpu_per_trial})
+        trainable_with_resources = tune.with_resources(_tune, {'cpu': 8, 'gpu': gpu_per_trial if gpu_per_trial else 0})
 
         # Define the ASHA scheduler for hyperparameter search
         asha_scheduler = ASHAScheduler(time_attr='epoch',
@@ -454,15 +453,13 @@ class YOLO:
                                        reduction_factor=3)
 
         # Define the callbacks for the hyperparameter search
-        tuner_callbacks = [] 
-
-        import os
+        tuner_callbacks = [WandbLoggerCallback(project='yolov8_tune')] if wandb else []
 
         # Create the Ray Tune hyperparameter search tuner
         tuner = tune.Tuner(trainable_with_resources,
                            param_space=space,
                            tune_config=tune.TuneConfig(scheduler=asha_scheduler, num_samples=max_samples),
-                           run_config=RunConfig(callbacks=tuner_callbacks, storage_path=os.path.abspath("./runs")))
+                           run_config=RunConfig(callbacks=tuner_callbacks, storage_path='./runs'))
 
         # Run the hyperparameter search
         tuner.fit()
