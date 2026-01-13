@@ -203,9 +203,9 @@ def add_integration_callbacks(instance):
     from .neptune import callbacks as neptune_cb
     from .raytune import callbacks as tune_cb
     # from .tensorboard import callbacks as tensorboard_cb
-    # from .wb import callbacks as wb_cb
+    from .wb import callbacks as wb_cb
 
-    for x in clearml_cb, comet_cb, hub_cb, mlflow_cb, neptune_cb, tune_cb:
+    for x in clearml_cb, comet_cb, hub_cb, mlflow_cb, neptune_cb, tune_cb,wb_cb:
         for k, v in x.items():
             if v not in instance.callbacks[k]:  # prevent duplicate callbacks addition
                 instance.callbacks[k].append(v)  # callback[name].append(func)
