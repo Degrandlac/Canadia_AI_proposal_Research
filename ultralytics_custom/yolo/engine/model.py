@@ -459,7 +459,7 @@ class YOLO:
         tuner = tune.Tuner(trainable_with_resources,
                            param_space=space,
                            tune_config=tune.TuneConfig(scheduler=asha_scheduler, num_samples=max_samples),
-                           run_config=RunConfig(callbacks=tuner_callbacks, local_dir='./runs'))
+                           run_config=RunConfig(callbacks=tuner_callbacks, storage_path='./runs'))
 
         # Run the hyperparameter search
         tuner.fit()
