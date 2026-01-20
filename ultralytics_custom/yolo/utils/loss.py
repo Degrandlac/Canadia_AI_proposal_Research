@@ -35,12 +35,13 @@ class BboxLoss(nn.Module):
     def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask):
         """IoU loss."""
         weight = torch.masked_select(target_scores.sum(-1), fg_mask).unsqueeze(-1)
-        # added codes 
-        
-        box_area = (target_bboxes[:, 2] - target_bboxes[:, 0]) * (target_bboxes[:, 3] - target_bboxes[:, 1])
-        size_weight = 1.0 / (box_area[fg_mask] + 1e-4)
+    
+        # ✅ CORRECTED: Filter target_bboxes FIRST, then calculate area
+        target_bboxes_fg = target_bboxes[fg_mask]
+        box_area = (target_bboxes_fg[:, 2] - target_bboxes_fg[:, 0]) * \
+                (target_bboxes_fg[:, 3] - target_bboxes_fg[:, 1])
+        size_weight = 1.0 / (box_area + 1e-4)
         weight = weight * size_weight.unsqueeze(-1)
-
 
         iou = bbox_iou(pred_bboxes[fg_mask], target_bboxes[fg_mask], xywh=False, CIoU=True)
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
