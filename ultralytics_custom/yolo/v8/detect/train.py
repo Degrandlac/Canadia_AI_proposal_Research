@@ -11,7 +11,7 @@ from ultralytics_custom.yolo.data import build_dataloader, build_yolo_dataset
 from ultralytics_custom.yolo.data.dataloaders.v5loader import create_dataloader
 from ultralytics_custom.yolo.engine.trainer import BaseTrainer
 from ultralytics_custom.yolo.utils import DEFAULT_CFG, LOGGER, RANK, colorstr
-from ultralytics_custom.yolo.utils.loss import BboxLoss, VarifocalLoss
+from ultralytics_custom.yolo.utils.loss import BboxLoss
 from ultralytics_custom.yolo.utils.ops import xywh2xyxy
 from ultralytics_custom.yolo.utils.plotting import plot_images, plot_labels, plot_results
 from ultralytics_custom.yolo.utils.tal import TaskAlignedAssigner, dist2bbox, make_anchors
@@ -144,8 +144,7 @@ class Loss:
         h = model.args  # hyperparameters
 
         m = model.model[-1]  # Detect() module
-        # self.bce = nn.BCEWithLogitsLoss(reduction='none')
-        self.varifocal_loss = VarifocalLoss()
+        self.bce = nn.BCEWithLogitsLoss(reduction='none')
         self.hyp = h
         self.stride = m.stride  # model strides
         self.nc = m.nc  # number of classes
@@ -209,34 +208,16 @@ class Loss:
         # pboxes
         pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
 
-        target_labels, target_bboxes, target_scores, fg_mask, _ = self.assigner(
+        _, target_bboxes, target_scores, fg_mask, _ = self.assigner(
             pred_scores.detach().sigmoid(), (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
             anchor_points * stride_tensor, gt_labels, gt_bboxes, mask_gt)
 
         target_bboxes /= stride_tensor
         target_scores_sum = max(target_scores.sum(), 1)
 
-
-        # target_labels = target_labels.unsqueeze(-1).expand(-1, -1, self.nc) # self.nc: class num
-        # one_hot = torch.zeros(target_labels.size(), device=self.device)
-        # one_hot.scatter_(-1, target_labels, 1)
-
-
-
-                # ✅ SIMPLE FIX:
-        target_labels_long = target_labels.long()  # ← ADD .long() HERE!
-
-        one_hot = torch.zeros(pred_scores.shape, dtype=pred_scores.dtype, device=self.device)
-        target_labels_long = target_labels_long.unsqueeze(-1).clamp(0, self.nc - 1)
-
-        one_hot.scatter_(-1, target_labels_long, 1.0)
-
         # cls loss
-        # loss[1] = self.varifocal_loss(pred_scores, target_scores, one_hot) / target_scores_sum
-
-        # cls loss
-        loss[1] = self.varifocal_loss(pred_scores, target_scores, one_hot) / target_scores_sum  # VFL way
-        # loss[1] = self.bce(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum  # BCE
+        # loss[1] = self.varifocal_loss(pred_scores, target_scores, target_labels) / target_scores_sum  # VFL way
+        loss[1] = self.bce(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum  # BCE
 
         # bbox loss
         if fg_mask.sum():
